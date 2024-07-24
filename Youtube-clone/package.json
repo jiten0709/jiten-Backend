@@ -1,0 +1,19 @@
+{
+  "name": "youtube-clone",
+  "version": "1.0.0",
+  "description": "A Youtube clone with my features.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": [
+    "javascript",
+    "backend"
+  ],
+  "author": "Jiten Parmar",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
