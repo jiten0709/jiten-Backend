@@ -3,7 +3,7 @@ A Youtube clone with my features.
 
 ## Services used.
 
-``` MongoDB Altas Database ``` , ``` Mongoose ```, ``` Express ```, ``` CORS ```, ``` cookie-parser ```, ``` mongoose-paginate-v2 ```, ``` bcrypt ```, ``` jsonwebtoken ```, ``` x ```.
+``` MongoDB Altas Database ``` , ``` Mongoose ```, ``` Express ```, ``` CORS ```, ``` cookie-parser ```, ``` mongoose-paginate-v2 ```, ``` bcrypt ```, ``` jsonwebtoken ```, ``` cloudinary ```.
 
 ## Database Design.
 
