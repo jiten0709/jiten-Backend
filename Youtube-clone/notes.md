@@ -5,3 +5,6 @@
 - ``` models ```: structure of data.
 - ``` routes ```: 
 - ``` utils ```: all the different utilities used in our app.
+
+# My changes
+- userSchema.pre()
