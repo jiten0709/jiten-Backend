@@ -1,10 +1,11 @@
 import { asyncHandler } from "../utils/asyscHandler.js";
 import { ApiError } from '../utils/ApiError.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 import { User } from '../models/user.models.js'
 import { Subscription } from '../models/subscription.models.js'
 import jwt from "jsonwebtoken";
+
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -271,6 +272,32 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         )
 })
 
+const updateUserAvatarWithTodo = asyncHandler(async (req, res) => {
+    const avatarLocalPath = req.file?.path
+    if (!avatarLocalPath) {
+        throw new ApiError(400, 'user.controllers :: Avatar is required')
+    }
+
+    const user = await User.findById(req.user?._id)
+    const oldAvatarUrl = user?.avatar.split('/').pop().split('.')[0]
+    if (oldAvatarUrl) {
+        await deleteFromCloudinary(oldAvatarUrl)
+    }
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+    if (!avatar) {
+        throw new ApiError(400, 'user.controllers :: Error uploading avatar')
+    }
+    user.avatar = avatar.url
+    await user.save()
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, user, 'user.controllers :: Avatar image updated successfully')
+        )
+})
+
 const updateUserCoverImage = asyncHandler(async (req, res) => {
     const coverImageLocalPath = req.file?.path
     if (!coverImageLocalPath) {
@@ -302,6 +329,32 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         )
 })
 
+const updateUserCoverImageWithTodo = asyncHandler(async (req, res) => {
+    const coverImageLocalPath = req.file?.path
+    if (!coverImageLocalPath) {
+        throw new ApiError(400, 'user.controllers :: Cover image is required')
+    }
+
+    const user = await User.findById(req.user?._id)
+    const oldCoverImageUrl = user?.coverImage.split('/').pop().split('.')[0]
+    if (oldCoverImageUrl) {
+        await deleteFromCloudinary(oldCoverImageUrl)
+    }
+
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+    if (!coverImage) {
+        throw new ApiError(400, 'user.controllers :: Error uploading cover image')
+    }
+    user.coverImage = coverImage.url
+    await user.save()
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, user, 'user.controllers :: Cover image updated successfully')
+        )
+})
+
 export {
     registerUser,
     loginUser,
@@ -311,5 +364,7 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserAvatarWithTodo,
+    updateUserCoverImage,
+    updateUserCoverImageWithTodo
 }
