@@ -3,7 +3,6 @@ import { ApiError } from '../utils/ApiError.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
 import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 import { User } from '../models/user.models.js'
-import { Subscription } from '../models/subscription.models.js'
 import jwt from "jsonwebtoken";
 
 
@@ -101,7 +100,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const { username, email, formPassword } = req.body
 
-    if (!(username || email)) {
+    if (!username || !email) {
         throw new ApiError(400, 'user.controllers :: Please provide username or email')
     }
 
@@ -224,7 +223,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
     const { fullName, email } = req.body
-    if (!(fullName || email)) {
+    if (!fullName || !email) {
         throw new ApiError(400, 'user.controllers :: Please provide fullName or email')
     }
 
@@ -355,6 +354,71 @@ const updateUserCoverImageWithTodo = asyncHandler(async (req, res) => {
         )
 })
 
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+    const { username } = req.params
+    if (!username) {
+        throw new ApiError(400, 'user.controllers :: Please provide username')
+    }
+
+    const channel = await User.aggregate([
+        {
+            $match: { username: username?.toLowerCase() }
+        },
+        {
+            $lookup: {
+                from: 'subscriptions',
+                localField: '_id',
+                foreignField: 'channel',
+                as: 'subscribers'
+            }
+        },
+        {
+            $lookup: {
+                from: 'subscroptions',
+                localField: '_id',
+                foreignField: 'subscriber',
+                as: 'subscribedTo'
+            }
+        },
+        {
+            $addFields: {
+                subscribersCount: {
+                    $size: '$subscribers'
+                },
+                channelsSubscribedToCount: {
+                    $size: '$subscribedTo'
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: { $in: [req.user?._id, '$subscribers.subscriber'] },
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                fullName: 1,
+                username: 1,
+                subscribersCount: 1,
+                channelsSubscribedToCount: 1,
+                isSubscribed: 1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1
+            }
+        }
+    ])
+    if (!channel?.length) {
+        throw new ApiError(404, 'user.controllers :: Channel not found')
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, channel[0], 'user.controllers :: Channel details'))
+})
+
 export {
     registerUser,
     loginUser,
@@ -366,5 +430,6 @@ export {
     updateUserAvatar,
     updateUserAvatarWithTodo,
     updateUserCoverImage,
-    updateUserCoverImageWithTodo
+    updateUserCoverImageWithTodo,
+    getUserChannelProfile
 }
