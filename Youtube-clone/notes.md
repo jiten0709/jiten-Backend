@@ -1,4 +1,4 @@
-# src
+# Notes
 
 - `controllers`: used majorly for functionality.
 - `db`: database connection related stuff.
@@ -12,3 +12,7 @@
 - 1. user.model :: userSchema.pre()
 - 2. user.controllers :: registerUser
 - 3. user.controllers :: loginUser
+
+# Links
+
+- Discord server: https://discord.com/channels/1022510020736331806/1196361053626437682
