@@ -16,5 +16,5 @@ const commentSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-commentSchema.plugin()
+commentSchema.plugin(mongooseAggregatePaginate)
 export default Comment = mongoose.model('Comment', commentSchema)
