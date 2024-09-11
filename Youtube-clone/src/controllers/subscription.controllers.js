@@ -3,7 +3,7 @@ import { ApiResponse } from '../utils/ApiResponse.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { Subscription } from '../models/subscription.model.js'
 import { validateObjectId } from '../utils/validateObjectId.js'
-import mongoose, { mongo } from 'mongoose'
+import mongoose from 'mongoose'
 
 const toggleSubscription = asyncHandler(async (req, res) => {
     const { channelId } = req.params
