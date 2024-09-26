@@ -1,4 +1,4 @@
-import { asyncHandler } from "../utils/asyscHandler.js"
+import { asyncHandler } from "../utils/asyncHandler.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { Video } from '../models/video.models.js'
 import { Subscription } from '../models/subscription.models.js'

@@ -1,6 +1,6 @@
-# Youtube Clone.
+# TweetTube.
 
-A Youtube clone with my features.
+This project provides a backend API for a video and tweet platform, enabling users to manage videos, tweets, playlists, comments, subscriptions, and more. Built with Node.js, express, and Mongoose, this API is designed to be scalable and secure.
 
 ## Services used.
 
