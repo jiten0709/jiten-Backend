@@ -99,9 +99,9 @@ const loginUser = asyncHandler(async (req, res) => {
     6. send cookies
     */
 
-    const { username, email, formPassword } = req.body
+    const { email, username, password } = req.body
 
-    if (!username || !email) {
+    if (!username && !email) {
         throw new ApiError(400, 'user.controllers :: Please provide username or email')
     }
 
@@ -112,13 +112,13 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(404, 'user.controllers :: User does not exist')
     }
 
-    const isPasswordValid = await user.isPasswordCorrect(formPassword)
+    const isPasswordValid = await user.isPasswordCorrect(password)
     if (!isPasswordValid) {
         throw new ApiError(400, 'user.controllers :: Invalid user credentials')
     }
 
-    const { newAccessToken, newRefreshToken } = await generateAccessAndRefreshTokens(user._id)
-    const { password, refreshToken, ...loggedInUser } = user.toObject()
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id)
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
     const options = {
         httpOnly: true,
         secure: true
@@ -126,13 +126,13 @@ const loginUser = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .cookie('accessToken', newAccessToken, options)
-        .cookie('refreshToken', newRefreshToken, options)
+        .cookie('accessToken', accessToken, options)
+        .cookie('refreshToken', refreshToken, options)
         .json(
             new ApiResponse(
                 200,
                 {
-                    user: loggedInUser, newAccessToken, newRefreshToken
+                    user: loggedInUser, accessToken, refreshToken
                 },
                 'user.controllers :: User logged in successfully'
             )
@@ -202,7 +202,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 const changeCurrentPassword = asyncHandler(async (req, res) => {
     const { currentPassword, newPassword } = req.body
     const user = await User.findById(req.user?._id)
-    const isPasswordValid = await User.isPasswordCorrect(currentPassword)
+    const isPasswordValid = await user.isPasswordCorrect(currentPassword)
 
     if (!isPasswordValid) {
         throw new ApiError(400, 'user.controllers :: Invalid current password')
@@ -224,7 +224,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
     const { fullName, email } = req.body
-    if (!fullName || !email) {
+    if (!fullName && !email) {
         throw new ApiError(400, 'user.controllers :: Please provide fullName or email')
     }
 
@@ -433,7 +433,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
                 as: 'watchHistory',
                 pipeline: [
                     {
-                        $loookup: {
+                        $lookup: {
                             from: 'users',
                             localField: 'owner',
                             foreignField: '_id',
