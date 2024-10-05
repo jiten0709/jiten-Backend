@@ -52,7 +52,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
             uploadOnCloudinary(videoLocalPath),
             uploadOnCloudinary(thumbnailLocalPath)
         ])
-        const publishedVideo = new Video({
+        const publishedVideo = await Video.create({
             videoFile: video?.url,
             thumbnail: thumbnail?.url,
             owner: userId,
@@ -75,9 +75,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params
-    if (!validateObjectId(videoId, 'Video')) {
-        throw new ApiError(401, "video.controllers.js :: Enter the video id to find the video")
-    }
+
     try {
         const video = await Video.findById(videoId)
         if (!video) {
@@ -91,60 +89,73 @@ const getVideoById = asyncHandler(async (req, res) => {
 })
 
 const updateVideo = asyncHandler(async (req, res) => {
-    const { videoId } = req.params
-    if (!validateObjectId(videoId, 'Video')) {
-        throw new ApiError(401, "video.controllers.js :: Enter the video id to update the video")
-    }
-    const { title, description } = req.body
+    const { videoId } = req.params;
+    const { title, description } = req.body;
+
+    // Check if title and description are provided
     if (!title || !description) {
-        throw new ApiError(404, "video.controllers.js :: All fields are required")
+        throw new ApiError(400, "video.controllers.js :: All fields are required");
     }
-    const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path
+
+    const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path;
+
     try {
-        const existingVideo = await Video.findById(videoId)
+        // Find the existing video by ID
+        const existingVideo = await Video.findById(videoId);
         if (!existingVideo) {
-            throw new ApiError(404, "video.controllers.js :: Video not found")
+            throw new ApiError(404, "video.controllers.js :: Video not found");
         }
 
-        let videoUpdate = { title, description }
-        let newThumbnailUpload
+        // Prepare the update object
+        let videoUpdate = { title, description };
+        let newThumbnailUpload;
+        console.log(thumbnailLocalPath)
+        // If a new thumbnail is provided, upload it to Cloudinary
         if (thumbnailLocalPath) {
-            newThumbnailUpload = await uploadOnCloudinary(thumbnailLocalPath)
-            videoUpdate.thumbnail = newThumbnailUpload?.url
+            newThumbnailUpload = await uploadOnCloudinary(thumbnailLocalPath);
+            console.log("video.controllers.js :: New thumbnail uploaded to Cloudinary");
+            videoUpdate.thumbnail = newThumbnailUpload?.url;
+
+            // Delete the old thumbnail from Cloudinary if a new one is uploaded
+            if (existingVideo.thumbnail) {
+                await deleteFromCloudinary(existingVideo.thumbnail);
+                console.log("video.controllers.js :: Old thumbnail deleted from Cloudinary");
+            }
         }
+
+        // Update the video in the database
         const updatedVideo = await Video.findByIdAndUpdate(
             videoId,
             videoUpdate,
-            { new: true })
+            { new: true }
+        );
+
+        // Check if the video was updated successfully
         if (!updatedVideo) {
-            throw new ApiError(500, "video.controllers.js :: Error updating video")
+            throw new ApiError(500, "video.controllers.js :: Error updating video data");
         }
 
-        if (newThumbnailUpload && existingVideo.thumbnail) {
-            await deleteFromCloudinary(existingVideo.thumbnail)
-        }
-
-        return res.status(200).json(new ApiResponse(200, video, "video.controllers.js :: Video updated successfully"))
+        // Return the updated video in the response
+        return res.status(200).json(new ApiResponse(200, updatedVideo, "video.controllers.js :: Video updated successfully"));
     } catch (error) {
-        throw new ApiError(500, "video.controllers.js :: Error updating video")
+        // Log the error and return a 500 response
+        console.error("video.controllers.js :: Error updating video:", error);
+        throw new ApiError(500, "video.controllers.js :: Error updating video");
     }
-})
+});
 
 const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     const userId = req.user._id
-    if (!validateObjectId(videoId, 'Video')) {
-        throw new ApiError(401, "video.controllers.js :: Invalid video id")
-    }
     const video = await Video.findById(videoId)
     if (!video) {
         throw new ApiError(404, "video.controllers.js :: Video not found")
     }
     checkOwnership(video.owner, userId)
     try {
-        await video.deleteOne()
         await deleteFromCloudinary(video.videoFile)
         await deleteFromCloudinary(video.thumbnail)
+        await video.deleteOne()
 
         return res.status(200).json(new ApiResponse(200, {}, "video.controllers.js :: Video deleted successfully"))
     } catch (error) {
