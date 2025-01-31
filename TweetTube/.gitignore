@@ -1,3 +1,6 @@
+# env files
+.env
+
 # Useless files
 delete.js
 public/temp
